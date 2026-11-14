@@ -1,0 +1,5 @@
+elemento,paso,observacion_1_s,observacion_2_s,observacion_3_s,observacion_4_s,observacion_5_s,observacion_6_s,promedio_s,valoracion_pct,tiempo_normal_s,suplemento_pct,tiempo_estandar_s
+Preparar lote,1-3,58,60,62,59,61,60,60,100,60,20,72
+Cargar y confirmar,4,138,140,142,139,141,140,140,100,140,20,168
+Descargar y trasladar,6-8,98,100,102,99,101,100,100,100,100,20,120
+Inspeccionar y embalar,9-10,98,100,102,99,101,100,100,100,100,20,120
