@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Capa a Capa — Simulador del Caso 4</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#172033;background:#f4f6fa}
+*{box-sizing:border-box}body{margin:0}header{background:#172b4d;color:white;padding:24px max(20px,calc((100% - 1100px)/2))}
+header h1{margin:0 0 6px;font-size:1.55rem}header p{margin:0;color:#dce6f5}
+main{max-width:1100px;margin:22px auto;padding:0 16px 40px}.panel{background:white;border:1px solid #dce2eb;border-radius:14px;padding:18px;margin:14px 0;box-shadow:0 2px 8px #15213b0a}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+label{display:block;font-size:.9rem;font-weight:650;margin-bottom:6px}input,select{width:100%;padding:10px;border:1px solid #bbc6d5;border-radius:8px;font:inherit;background:white}
+button{background:#2057a5;color:white;border:0;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer}button:hover{background:#164580}
+.small{color:#5b6678;font-size:.88rem}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.metric{background:#f5f8fc;border:1px solid #e0e7f0;border-radius:10px;padding:12px}.metric span{display:block;color:#5b6678;font-size:.82rem}.metric strong{font-size:1.35rem}
+table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{text-align:left;padding:9px;border-bottom:1px solid #e7ebf1;vertical-align:top}th{background:#f5f7fa}
+.scroll{overflow-x:auto}.bar{height:14px;background:#e9edf3;border-radius:8px;overflow:hidden;min-width:90px}.bar>i{display:block;height:100%;background:#3476c5}
+.status{padding:10px 12px;background:#fff8e8;border:1px solid #f0dfb6;border-radius:9px;font-size:.9rem}
+footer{color:#657187;font-size:.82rem;padding:12px 0}
+@media(max-width:600px){header{padding:20px} .panel{padding:14px}}
+</style>
+</head>
+<body>
+<header><h1>Capa a Capa — Caso 4</h1><p>Simulador didáctico de despacho persona–máquinas y comparación A/B/C</p></header>
+<main>
+<section class="panel">
+<h2>Parámetros de la sesión</h2>
+<div class="controls">
+<div><label for="alt">Alternativa</label><select id="alt"><option value="A">A — Continuar (2 impresoras)</option><option value="B">B — Plantilla de kits (2 impresoras)</option><option value="C">C — Tercera impresora (3 impresoras)</option></select></div>
+<div><label for="h">Horizonte H (min)</label><input id="h" type="number" min="0" max="120" step="1" value="100"></div>
+<div><label for="d">Demanda (piezas; múltiplo de 4)</label><input id="d" type="number" min="0" step="4" value="40"></div>
+<div><label for="cycle">Ciclo automático (min)</label><input id="cycle" type="number" min="12" max="20" step="1" value="16"></div>
+</div>
+<p class="small">El modelo considera una sola persona, lotes indivisibles de 4 piezas y ningún rechazo. El ciclo automático no requiere atención. La persona no realiza dos tareas manuales al mismo tiempo.</p>
+<button id="run">Simular alternativa</button>
+</section>
+<section class="panel">
+<h2>Resultados</h2><div id="metrics" class="metrics"><p class="small">Ajusta los parámetros y pulsa “Simular alternativa”.</p></div>
+<div id="message" class="status" style="margin-top:14px">La simulación aplica la regla de despacho descrita en el caso y el criterio estricto de acabado antes de H.</div>
+</section>
+<section class="panel"><h2>Cronograma de la persona</h2><p class="small">Los intervalos se muestran en minutos desde el inicio de la sesión. Los espacios sin actividad manual representan espera/tiempo disponible.</p><div class="scroll" id="timeline"></div></section>
+<section class="panel"><h2>Detalle de eventos</h2><div class="scroll" id="events"></div></section>
+<section class="panel"><h2>Comparación económica de 20 sesiones</h2><p class="small">Contribución incremental: 12 u.m. por pieza adicional respecto de A. Inversión: A = 0, B = 360 u.m., C = 1.200 u.m. Las horas de personal son fijas; no se monetiza el tiempo libre.</p><div class="scroll" id="economics"></div></section>
+<section class="panel"><h2>Datos y supuestos</h2>
+<table><tbody>
+<tr><th>Elemento</th><th>TE</th><th>Uso en el modelo</th></tr>
+<tr><td>Preparación + carga (A/C)</td><td>1,2 + 2,8 = 4 min</td><td>L = 4 min</td></tr>
+<tr><td>Preparación + carga (B)</td><td>Plantilla reduce L</td><td>L = 2 min (supuesto exacto del caso)</td></tr>
+<tr><td>Descarga y traslado</td><td>2 min</td><td>U = 2 min</td></tr>
+<tr><td>Inspección y embalaje</td><td>2 min</td><td>F = 2 min</td></tr>
+<tr><td>Ciclo automático</td><td>16 min por defecto</td><td>Editable entre 12 y 20 min</td></tr>
+</tbody></table>
+<p class="small">Piezas/hora-persona se calcula con el horizonte disponible de esta sesión (H minutos). Para la sesión base H = 100 min, coincide con usar los 100 minutos disponibles. La ocupación manual suma los intervalos efectivamente ejecutados dentro de H.</p>
+</section>
+<footer>Herramienta académica. No sustituye los diagramas manuales ni demuestra que la política sea óptima. Verifica los resultados contra el anexo patrón liberado por el docente.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>Number(n).toFixed(1).replace(".",",");
+function simulate(alt,H,demand,cycle){
+ const L=alt==="B"?2:4,U=2,F=2,n=alt==="C"?3:2,strict=true;
+ let t=0,remaining=demand/4,batches=0,finished=0,manual=0,events=[],tasks=[],machines=[];
+ const add=(type,start,end,machine,batch,detail="")=>{
+   if(end>start){events.push({type,start,end,machine,batch,detail});}
+   if(["Preparar + cargar","Descargar","Acabado"].includes(type)){
+     const a=Math.max(0,start),b=Math.min(H,end); if(b>a){tasks.push({type,start:a,end:b,machine,batch});manual+=b-a;}
+   }
+ };
+ function canStart(start){return start+L+cycle+U+F<=H+1e-9 && remaining>0;}
+ function load(m){
+   if(!canStart(t))return false;
+   remaining--;batches++;const b=batches,s=t;
+   add("Preparar + cargar",s,s+L,m,b);
+   t+=L;m.busyUntil=t+cycle;m.batch=b;m.active=true;
+   events.push({type:"Ciclo automático",start:t,end:t+cycle,machine:m.name,batch:b,detail:"Sin atención de la persona"});
+   return true;
+ }
+ for(let i=0;i<n;i++){let m={name:"M"+(i+1),busyUntil:0,batch:null,active:false};machines.push(m);load(m);}
+ let idx=0,guard=0;
+ while(machines.some(m=>m.active)&&guard++<1000){
+   let m=machines[idx%n];idx++;
+   if(!m.active)continue;
+   if(t<m.busyUntil){events.push({type:"Espera de impresión",start:t,end:m.busyUntil,machine:m.name,batch:m.batch,detail:"La persona espera la máquina visitada"});t=m.busyUntil;}
+   const old=m.batch,unloadStart=t;add("Descargar",t,t+U,m.name,old);t+=U;m.active=false;m.batch=null;
+   // La recarga se decide desde el instante posterior a descargar, antes del acabado del lote anterior.
+   let reloaded=false;
+   if(canStart(t)){reloaded=load(m);}
+   const finishStart=t;add("Acabado",t,t+F,m.name,old);t+=F;
+   if(t < H-1e-9 || (strict && t < H-1e-9)){finished++;}
+   // t==H no se cuenta: criterio literal "antes de H".
+   if(!reloaded && remaining>0 && !machines.some(x=>x.active))break;
+ }
+ const pieces=finished*4;
+ const occupied=Math.min(manual,H);
+ const utilization=H>0?occupied/H*100:0;
+ const rate=H>0?pieces/(H/60):0;
+ return {alt,H,demand,cycle,L,U,F,n,batches,finished,pieces,short:Math.max(0,demand-pieces),occupied,utilization,rate,events:events.sort((a,b)=>a.start-b.start),tasks,finishTime:events.filter(e=>e.type==="Acabado"&&e.end<H-1e-9).reduce((x,e)=>Math.max(x,e.end),0)};
+}
+function render(){
+ const alt=$("alt").value,H=Number($("h").value),d=Number($("d").value),cycle=Number($("cycle").value);
+ if(!Number.isFinite(H)||H<0||H>120||!Number.isInteger(d)||d<0||d%4!==0||!Number.isFinite(cycle)||cycle<12||cycle>20){$("message").textContent="Revisa las entradas: H entre 0 y 120; demanda no negativa y múltiplo de 4; ciclo entre 12 y 20 min.";return;}
+ const r=simulate(alt,H,d,cycle);
+ const inv={A:0,B:360,C:1200};
+ $("metrics").innerHTML=[
+ ["Piezas terminadas",r.pieces],["Piezas faltantes",r.short],["Lotes iniciados",r.batches],["Lotes terminados",r.finished],
+ ["Ocupación manual",fmt(r.occupied)+" min"],["Ocupación persona",fmt(r.utilization)+" %"],["Piezas/hora-persona",fmt(r.rate)],["Último acabado contado",r.finishTime?fmt(r.finishTime)+" min":"—"]
+ ].map(x=>'<div class="metric"><span>'+x[0]+'</span><strong>'+x[1]+'</strong></div>').join("");
+ $("message").textContent="Alternativa "+alt+": "+r.n+" impresora(s), L="+r.L+" min, U=2 min, F=2 min y ciclo="+cycle+" min. Se descuentan 4 piezas al iniciar cada lote; solo cuentan lotes cuyo acabado termina estrictamente antes de H.";
+ $("timeline").innerHTML='<table><thead><tr><th>Actividad</th><th>Inicio</th><th>Fin</th><th>Máquina</th><th>Lote</th></tr></thead><tbody>'+r.tasks.map(e=>'<tr><td>'+e.type+'</td><td>'+fmt(e.start)+'</td><td>'+fmt(e.end)+'</td><td>'+e.machine+'</td><td>'+e.batch+'</td></tr>').join("")+'</tbody></table><p class="small">Minutos manuales acumulados dentro del horizonte: '+fmt(r.occupied)+' de '+fmt(H)+'.</p>';
+ $("events").innerHTML='<table><thead><tr><th>Evento</th><th>Inicio</th><th>Fin</th><th>Máquina</th><th>Lote</th><th>Nota</th></tr></thead><tbody>'+r.events.map(e=>'<tr><td>'+e.type+'</td><td>'+fmt(e.start)+'</td><td>'+fmt(e.end)+'</td><td>'+e.machine+'</td><td>'+e.batch+'</td><td>'+e.detail+'</td></tr>').join("")+'</tbody></table>';
+ const rows=["A","B","C"].map(a=>{const q=simulate(a,H,d,cycle);return {a,p:q.pieces,inv:inv[a],delta:q.pieces-r.pieces,net:20*12*(q.pieces-r.pieces)-inv[a]};});
+ // La comparación económica toma A como referencia, no la alternativa seleccionada.
+ const base=simulate("A",H,d,cycle);
+ $("economics").innerHTML='<table><thead><tr><th>Alternativa</th><th>Piezas/sesión</th><th>Inversión</th><th>Δ piezas vs A</th><th>Resultado incremental 20 sesiones*</th></tr></thead><tbody>'+["A","B","C"].map(a=>{const q=simulate(a,H,d,cycle),net=20*12*(q.pieces-base.pieces)-inv[a];return '<tr><td>'+a+'</td><td>'+q.pieces+'</td><td>'+inv[a]+' u.m.</td><td>'+(q.pieces-base.pieces)+'</td><td>'+net+' u.m.</td></tr>';}).join("")+'</tbody></table><p class="small">* 20 × 12 u.m. × (piezas de la alternativa − piezas de A) − inversión. Para A el resultado incremental es 0. No representa utilidad total ni ahorro de nómina.</p>';
+}
+$("run").addEventListener("click",render);["alt","h","d","cycle"].forEach(id=>$(id).addEventListener("change",render));render();
+</script>
+</body></html>
