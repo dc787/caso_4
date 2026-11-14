@@ -6,7 +6,7 @@ Repositorio de trabajo para el análisis y simulación del Caso 4 de Estudio del
 
 La aplicación web está en [app/index.html](app/index.html). Es un archivo HTML autónomo: no requiere instalar paquetes ni servicios externos.
 
-**Para ejecutarla:** descarga el archivo `app/index.html` y ábrelo en un navegador moderno. También puede publicarse como sitio estático con GitHub Pages configurando la carpeta `/root` si se mueve el archivo a la raíz, o `/docs` si se copia allí; la carpeta actual `/app` no es una fuente seleccionable directamente en la configuración estándar de Pages.
+**Para ejecutarla:** descarga el archivo `app/index.html` y ábrelo en un navegador moderno. También se preparó una copia en `docs/index.html` para GitHub Pages. Para publicarla, entra a **Settings → Pages**, elige **Deploy from a branch**, selecciona la rama `main` y la carpeta `/docs`, y guarda. GitHub generará la dirección pública del sitio cuando termine la publicación.
 
 ## Qué permite analizar
 - Alternativas A (2 impresoras), B (plantilla de kits, L = 2 min) y C (3 impresoras).
